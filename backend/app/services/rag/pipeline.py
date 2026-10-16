@@ -268,4 +268,11 @@ class RAGPipeline:
             })
             db.commit()
         except Exception as e:
+            # Rollback para não deixar a sessão em estado abortado
+            # (InFailedSqlTransaction) e inviabilizar consultas seguintes
+            # que reutilizam a mesma Session.
+            try:
+                db.rollback()
+            except Exception:
+                pass
             logger.warning("erro_log_consulta", erro=str(e))

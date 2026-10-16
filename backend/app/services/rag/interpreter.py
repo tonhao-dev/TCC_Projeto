@@ -1,6 +1,6 @@
-from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from app.config import settings
+from app.services.rag.llm_factory import build_chat_llm
 import json
 import re
 import structlog
@@ -43,9 +43,7 @@ class QueryInterpreter:
     """Extrai entidades estruturadas da consulta em linguagem natural."""
 
     def __init__(self):
-        self.llm = ChatAnthropic(
-            model=settings.ANTHROPIC_MODEL,
-            api_key=settings.ANTHROPIC_API_KEY,
+        self.llm = build_chat_llm(
             max_tokens=512,
             temperature=0,
         )

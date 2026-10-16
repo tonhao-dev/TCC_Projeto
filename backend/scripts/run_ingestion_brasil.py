@@ -48,6 +48,29 @@ TODAS_UFS = [
 CHECKPOINT_PATH = Path(__file__).parent.parent / "data" / "checkpoint_brasil.json"
 DLQ_PATH = Path(__file__).parent.parent / "data" / "dead_letter_brasil.json"
 MAX_RETRIES = 3
+ESPERA_DISJUNTOR_S = 5  # sondagem enquanto o disjuntor está aberto
+CONCORRENCIA_DOCUMENTOS = 8  # emendas buscadas em paralelo na fase de documentos
+# Emendas de localidade MÚLTIPLO, Nacional, Exterior ou regional ficam com uf vazio
+# (46% da base). Sem esta chave as fases por UF nunca coletavam os documentos delas.
+SEM_UF = "SEM_UF"
+
+
+def _filtro_uf(uf: str) -> tuple[str, dict]:
+    """Filtro SQL da UF e seus parâmetros; SEM_UF pega uf vazio ou nulo."""
+    if uf == SEM_UF:
+        return "COALESCE(e.uf, '') = ''", {}
+    return "e.uf = :uf", {"uf": uf}
+
+
+def _ufs_da_passada(uf_filter: str | None, pular_sem_uf: bool = False) -> list[str]:
+    """Chaves de uma passada: só a UF pedida, ou a passada nacional.
+
+    A nacional pula o AC (coletado à parte) e termina nas emendas sem UF, a menos
+    que --pular-sem-uf as deixe de fora (a base do artigo não tem documentos delas).
+    """
+    if uf_filter:
+        return [uf_filter]
+    return [uf for uf in TODAS_UFS if uf != "AC"] + ([] if pular_sem_uf else [SEM_UF])
 
 
 def _parse_date(date_str):
@@ -134,7 +157,9 @@ async def fase_emendas(cp: CheckpointManager, dlq: DeadLetterQueue):
             logger.info("emendas_skip", ano=ano)
             continue
 
-        start_page = cp.get_last_page("emendas", key) + 1
+        # Retoma NA página registrada, não na seguinte: o checkpoint é gravado no
+        # meio da página e o resto dela se perderia. As repetidas são puladas abaixo.
+        start_page = max(1, cp.get_last_page("emendas", key))
         cp.mark_started("emendas", key)
         logger.info("coletando_emendas_brasil", ano=ano, start_page=start_page)
 
@@ -204,13 +229,11 @@ def _popular_lookups_emenda(db, emenda_data: dict):
 # Fase 2: Documentos (todas as UFs)
 # ---------------------------------------------------------------------------
 async def fase_documentos(cp: CheckpointManager, dlq: DeadLetterQueue,
-                          uf_filter: str | None = None):
+                          uf_filter: str | None = None, pular_sem_uf: bool = False):
     cb = CircuitBreaker(failure_threshold=10, recovery_timeout=300)
     collector = CGUCollector()
 
-    ufs = [uf_filter] if uf_filter else [
-        uf for uf in TODAS_UFS if uf != "AC"
-    ]
+    ufs = _ufs_da_passada(uf_filter, pular_sem_uf)
 
     for uf in ufs:
         key = uf
@@ -220,93 +243,123 @@ async def fase_documentos(cp: CheckpointManager, dlq: DeadLetterQueue,
 
         init_db()
         db = SessionLocal()
-        last_index = cp.get_value("documentos", key, "last_index", 0)
+        # Retoma pelo id da última emenda processada. A lista abaixo é recalculada
+        # a cada execução e encolhe, então um índice posicional pularia emendas.
+        last_emenda_id = cp.get_value("documentos", key, "last_emenda_id", 0)
         cp.mark_started("documentos", key)
 
         try:
-            result = db.execute(text("""
+            filtro, params_uf = _filtro_uf(uf)
+            result = db.execute(text(f"""
                 SELECT e.id, e.codigo_emenda
                 FROM emendas e
                 LEFT JOIN documentos_emenda d ON d.emenda_id = e.id
                 WHERE d.id IS NULL
                   AND e.codigo_emenda IS NOT NULL
-                  AND e.uf = :uf
+                  AND {filtro}
+                  AND e.id > :last_id
                 ORDER BY e.id
-            """), {"uf": uf})
+            """), {**params_uf, "last_id": last_emenda_id})
             emendas = [(r.id, r.codigo_emenda) for r in result.fetchall()]
 
             total_emendas = len(emendas)
             logger.info("documentos_inicio", uf=uf, total_emendas=total_emendas,
-                        resumindo_de=last_index)
+                        resumindo_apos_emenda_id=last_emenda_id,
+                        concorrencia=CONCORRENCIA_DOCUMENTOS)
 
             total_docs = 0
             erros = 0
             t0 = time.monotonic()
+            # Várias emendas em voo ao mesmo tempo (o limitador por chave segura o
+            # ritmo); a gravação no SQLite fica serializada. O checkpoint só avança
+            # até a menor emenda ainda não concluída, para a retomada não pular nada.
+            fila = asyncio.Queue()
+            for item in emendas:
+                fila.put_nowait(item)
+            gravacao = asyncio.Lock()
+            concluidas: set[int] = set()
+            ordem = [eid for eid, _ in emendas]
+            proxima = 0  # índice em `ordem` da menor emenda não concluída
+            processadas = 0
 
-            for i, (emenda_id, codigo_emenda) in enumerate(emendas):
-                if i < last_index:
-                    continue
+            def _gravar_documentos(emenda_id: int, docs: list[dict]) -> int:
+                novos = 0
+                for doc_data in docs:
+                    existe = db.execute(
+                        text("SELECT id FROM documentos_emenda WHERE codigo_documento = :cod"),
+                        {"cod": doc_data["codigo_documento"]}
+                    ).fetchone()
+                    if not existe:
+                        db.add(DocumentoEmenda(
+                            emenda_id=emenda_id,
+                            codigo_documento=doc_data["codigo_documento"],
+                            fase=doc_data.get("fase"),
+                            valor=doc_data.get("valor", 0),
+                            data_documento=_parse_date(doc_data.get("data_documento")),
+                            tipo_documento=doc_data.get("tipo_documento"),
+                            observacao=doc_data.get("observacao"),
+                        ))
+                        db.flush()
+                        novos += 1
+                db.commit()
+                return novos
 
-                if not cb.can_proceed():
-                    dlq.add("documentos", codigo_emenda, "circuit_breaker_open")
-                    continue
-
-                for tentativa in range(1, MAX_RETRIES + 1):
+            async def trabalhador():
+                nonlocal total_docs, erros, proxima, processadas
+                while True:
                     try:
-                        docs = await collector.coletar_documentos_emenda(codigo_emenda)
-                        cb.record_success()
+                        emenda_id, codigo_emenda = fila.get_nowait()
+                    except asyncio.QueueEmpty:
+                        return
+                    # Disjuntor aberto: espera a API voltar em vez de mandar a emenda
+                    # para a DLQ (numa coleta longa isso esvaziaria a UF inteira).
+                    while not cb.can_proceed():
+                        await asyncio.sleep(ESPERA_DISJUNTOR_S)
 
-                        for doc_data in docs:
-                            existe = db.execute(
-                                text("SELECT id FROM documentos_emenda WHERE codigo_documento = :cod"),
-                                {"cod": doc_data["codigo_documento"]}
-                            ).fetchone()
+                    for tentativa in range(1, MAX_RETRIES + 1):
+                        try:
+                            docs = await collector.coletar_documentos_emenda(codigo_emenda)
+                            cb.record_success()
+                            async with gravacao:
+                                try:
+                                    total_docs += _gravar_documentos(emenda_id, docs)
+                                except Exception:
+                                    db.rollback()
+                                    raise
+                            break
+                        except Exception as e:
+                            cb.record_failure()
+                            if tentativa < MAX_RETRIES:
+                                wait = tentativa * 10
+                                logger.warning("retry_doc", uf=uf, codigo=codigo_emenda,
+                                               tentativa=tentativa, wait=wait,
+                                               erro=str(e)[:80])
+                                await asyncio.sleep(wait)
+                            else:
+                                erros += 1
+                                dlq.add("documentos", codigo_emenda, str(e)[:200])
+                                logger.error("falha_doc", uf=uf, codigo=codigo_emenda,
+                                             erro=str(e)[:120])
 
-                            if not existe:
-                                doc = DocumentoEmenda(
-                                    emenda_id=emenda_id,
-                                    codigo_documento=doc_data["codigo_documento"],
-                                    fase=doc_data.get("fase"),
-                                    valor=doc_data.get("valor", 0),
-                                    data_documento=_parse_date(doc_data.get("data_documento")),
-                                    tipo_documento=doc_data.get("tipo_documento"),
-                                    observacao=doc_data.get("observacao"),
-                                )
-                                db.add(doc)
-                                db.flush()
-                                total_docs += 1
+                    concluidas.add(emenda_id)
+                    processadas += 1
+                    while proxima < len(ordem) and ordem[proxima] in concluidas:
+                        proxima += 1
+                    if processadas % 10 == 0 or processadas == total_emendas:
+                        elapsed = time.monotonic() - t0
+                        rate = processadas / elapsed if elapsed > 0 else 0
+                        eta_min = (total_emendas - processadas) / rate / 60 if rate > 0 else 0
+                        pct = processadas / total_emendas * 100 if total_emendas else 0
+                        logger.info("progresso_documentos", uf=uf,
+                                    pos=processadas, total=total_emendas,
+                                    pct=f"{pct:.1f}%", docs=total_docs, erros=erros,
+                                    eta_min=f"{eta_min:.1f}")
+                        marca = ordem[proxima - 1] if proxima else last_emenda_id
+                        cp.update_progress("documentos", key, last_emenda_id=marca,
+                                           total_docs=total_docs, erros=erros)
 
-                        db.commit()
-                        break
-
-                    except Exception as e:
-                        db.rollback()
-                        cb.record_failure()
-                        if tentativa < MAX_RETRIES:
-                            wait = tentativa * 10
-                            logger.warning("retry_doc", uf=uf, codigo=codigo_emenda,
-                                           tentativa=tentativa, wait=wait,
-                                           erro=str(e)[:80])
-                            await asyncio.sleep(wait)
-                        else:
-                            erros += 1
-                            dlq.add("documentos", codigo_emenda, str(e)[:200])
-                            logger.error("falha_doc", uf=uf, codigo=codigo_emenda,
-                                         erro=str(e)[:120])
-
-                # Progresso a cada 10 emendas ou a cada 60s
-                pos = i + 1
-                if pos % 10 == 0 or pos == total_emendas:
-                    elapsed = time.monotonic() - t0
-                    rate = pos / elapsed if elapsed > 0 else 0
-                    eta_min = (total_emendas - pos) / rate / 60 if rate > 0 else 0
-                    pct = pos / total_emendas * 100 if total_emendas else 0
-                    logger.info("progresso_documentos", uf=uf,
-                                pos=pos, total=total_emendas,
-                                pct=f"{pct:.1f}%", docs=total_docs, erros=erros,
-                                eta_min=f"{eta_min:.1f}")
-                    cp.update_progress("documentos", key,
-                                       last_index=i, total_docs=total_docs, erros=erros)
+            await asyncio.gather(*(trabalhador() for _ in
+                                   range(min(CONCORRENCIA_DOCUMENTOS, max(total_emendas, 1)))))
 
             cp.mark_completed("documentos", key, total=total_docs)
             logger.info("documentos_completos", uf=uf, docs=total_docs, erros=erros)
@@ -321,8 +374,10 @@ async def fase_documentos(cp: CheckpointManager, dlq: DeadLetterQueue,
 async def _fetch_detalhe(collector, codigo_documento, cb, semaphore):
     """Fetch a single document detail with concurrency control."""
     async with semaphore:
-        if not cb.can_proceed():
-            return codigo_documento, None, "circuit_breaker_open"
+        # Disjuntor aberto: espera em vez de devolver "circuit_breaker_open", que
+        # mandava para a DLQ, em segundos, todos os documentos pendentes da UF.
+        while not cb.can_proceed():
+            await asyncio.sleep(ESPERA_DISJUNTOR_S)
         for tentativa in range(1, MAX_RETRIES + 1):
             try:
                 detalhe = await collector.coletar_detalhes_documento(codigo_documento)
@@ -348,16 +403,14 @@ def _get_concurrency():
 
 
 async def fase_detalhes(cp: CheckpointManager, dlq: DeadLetterQueue,
-                        uf_filter: str | None = None):
+                        uf_filter: str | None = None, pular_sem_uf: bool = False):
     cb = CircuitBreaker(failure_threshold=10, recovery_timeout=300)
     collector = CGUCollector()
     n_concurrent = _get_concurrency()
     logger.info("detalhes_pipeline", concurrency=n_concurrent,
                 hour=datetime.now().hour)
 
-    ufs = [uf_filter] if uf_filter else [
-        uf for uf in TODAS_UFS if uf != "AC"
-    ]
+    ufs = _ufs_da_passada(uf_filter, pular_sem_uf)
 
     for uf in ufs:
         key = uf
@@ -367,18 +420,22 @@ async def fase_detalhes(cp: CheckpointManager, dlq: DeadLetterQueue,
 
         init_db()
         db = SessionLocal()
-        last_index = cp.get_value("detalhes", key, "last_index", 0)
+        # A consulta abaixo já exclui os documentos com detalhes coletados, então a
+        # lista recomeça do início a cada retomada. O last_index do checkpoint é só
+        # progresso: pular por ele descartaria documentos ainda pendentes.
+        last_index = 0
         cp.mark_started("detalhes", key)
 
         try:
-            result = db.execute(text("""
+            filtro, params_uf = _filtro_uf(uf)
+            result = db.execute(text(f"""
                 SELECT d.id, d.codigo_documento
                 FROM documentos_emenda d
                 JOIN emendas e ON e.id = d.emenda_id
-                WHERE e.uf = :uf
+                WHERE {filtro}
                   AND (d.detalhes_coletados IS NULL OR d.detalhes_coletados = 0)
                 ORDER BY d.id
-            """), {"uf": uf})
+            """), params_uf)
             documentos = [(r.id, r.codigo_documento) for r in result.fetchall()]
 
             total = len(documentos)
@@ -788,7 +845,8 @@ async def retry_dead_letter_queue():
 # Orquestrador
 # ---------------------------------------------------------------------------
 async def main(resume: bool = False, etapa: str | None = None,
-               uf_filter: str | None = None, retry_dlq: bool = False):
+               uf_filter: str | None = None, retry_dlq: bool = False,
+               pular_sem_uf: bool = False):
     cp = CheckpointManager(path=CHECKPOINT_PATH)
     dlq = DeadLetterQueue(DLQ_PATH)
 
@@ -808,8 +866,8 @@ async def main(resume: bool = False, etapa: str | None = None,
 
     etapas = {
         "emendas": lambda: fase_emendas(cp, dlq),
-        "documentos": lambda: fase_documentos(cp, dlq, uf_filter),
-        "detalhes": lambda: fase_detalhes(cp, dlq, uf_filter),
+        "documentos": lambda: fase_documentos(cp, dlq, uf_filter, pular_sem_uf),
+        "detalhes": lambda: fase_detalhes(cp, dlq, uf_filter, pular_sem_uf),
     }
 
     if etapa:
@@ -853,6 +911,9 @@ if __name__ == "__main__":
                         help="Filtrar por UF específica (ex: SP)")
     parser.add_argument("--retry-dlq", action="store_true",
                         help="Reprocessar itens da Dead Letter Queue")
+    parser.add_argument("--pular-sem-uf", action="store_true",
+                        help="Passada nacional sem as emendas sem UF (MÚLTIPLO/Nacional); "
+                             "a base do artigo não tem documentos delas")
     parser.add_argument("--stats", action="store_true",
                         help="Exibir estatísticas sem executar coleta")
     args = parser.parse_args()
@@ -865,4 +926,5 @@ if __name__ == "__main__":
             etapa=args.fase,
             uf_filter=args.uf.upper() if args.uf else None,
             retry_dlq=args.retry_dlq,
+            pular_sem_uf=args.pular_sem_uf,
         ))
