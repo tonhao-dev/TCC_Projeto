@@ -477,6 +477,15 @@ def _tirar_sem_uf_do_pg() -> tuple[int, int]:
     conn = _pg()
     try:
         with conn.cursor() as cur:
+            # Índices de apoio ANTES do delete: sem eles o ON DELETE CASCADE de
+            # documento_favorecido/beneficiarios apaga linha a linha (seq scan por
+            # documento_id) e o DELETE de ~637 mil docs leva 20+ min. A etapa
+            # 'indices' só roda DEPOIS do sync, então estes precisam existir aqui.
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_documentos_emenda_emenda_id "
+                        "ON documentos_emenda (emenda_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_docfav_documento_id "
+                        "ON documento_favorecido (documento_id)")
+            conn.commit()
             cur.execute(SQL_APAGAR_VINCULOS_SEM_UF)
             vinculos = cur.rowcount
             cur.execute(SQL_APAGAR_DOCS_SEM_UF)
