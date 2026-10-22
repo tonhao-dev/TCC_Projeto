@@ -23,6 +23,19 @@ CREATE_NEW_PROCESS_GROUP = 0x00000200
 CREATE_BREAKAWAY_FROM_JOB = 0x01000000
 BELOW_NORMAL_PRIORITY_CLASS = 0x00004000
 
+
+def _url_nacional() -> str:
+    """DATABASE_URL do .env com o banco trocado para transparencia_nacional.
+
+    O evaluate COM RAG lê os dados do Postgres nacional; o .env aponta para o
+    seed (transparencia_fiscal), então reescrevemos só o nome do banco.
+    """
+    from urllib.parse import urlparse
+    from dotenv import dotenv_values
+    url = (dotenv_values(BACKEND.parent / ".env").get("DATABASE_URL") or "").strip()
+    u = urlparse(url)
+    return u._replace(path="/transparencia_nacional").geturl()
+
 # alvo: (argumentos, log, variáveis extras, variáveis removidas, prioridade)
 ALVOS = {
     # O orquestrador escolhe o banco de cada etapa; não pode herdar DATABASE_URL.
@@ -32,6 +45,12 @@ ALVOS = {
     "embeddings": (["scripts/embeddings_paralelo_sqlite.py"], "09_embeddings_paralelo.log",
                    {"DATABASE_URL": "sqlite:///data/transparencia_local.db"},
                    ("PG_DESTINO_URL",), BELOW_NORMAL_PRIORITY_CLASS),
+    # Avaliação 120 COM/SEM RAG no provedor do .env (ollama local). Lê do Postgres
+    # nacional (não o seed transparencia_fiscal). A fase paralelo faz spawn dos
+    # 2 subprocessos com_rag/sem_rag e depois pontua.
+    "avaliar_ollama": (["scripts/evaluate_120_com_sem_rag.py", "--fase", "paralelo"],
+                       "10_avaliar_ollama.log",
+                       {"DATABASE_URL": _url_nacional()}, ("PG_DESTINO_URL",), 0),
 }
 
 

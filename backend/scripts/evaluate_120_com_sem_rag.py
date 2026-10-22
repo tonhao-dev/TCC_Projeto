@@ -683,6 +683,16 @@ def fase_pontuar(consultas: list[dict], dir_parcial: Path, saida: Path,
     print(f"COM RAG salvo em: {caminho_com}", flush=True)
     print(f"SEM RAG salvo em: {caminho_sem}", flush=True)
 
+    # CSV comparativo (importável no Google Sheets). Guardado: uma falha aqui
+    # nunca invalida a avaliação já gravada acima.
+    try:
+        from scripts.gerar_csv_comparativo import gerar as _gerar_csv
+        csv_path = _gerar_csv(caminho_com, caminho_sem, None)
+        print(f"CSV comparativo salvo em: {csv_path}", flush=True)
+    except Exception as exc:  # noqa: BLE001 - best-effort, não deve abortar
+        print(f"AVISO: falha ao gerar CSV comparativo ({exc}). "
+              f"Gere manualmente: py scripts/gerar_csv_comparativo.py", flush=True)
+
     falhas_finais = [f"{cen}:{r['id']}" for cen, regs in (("COM RAG", res_com),
                                                          ("SEM RAG", res_sem))
                      for r in regs if not r.get("sucesso")]

@@ -1,0 +1,13 @@
+{
+  "modelo": "gemma3:1b",
+  "provedor": "ollama",
+  "inicio": "2026-10-20 00:23:44.179",
+  "base_de_dados": {
+    "emendas": 34126,
+    "parlamentares": 929,
+    "documentos_emenda": 544839,
+    "beneficiarios": 434,
+    "favorecidos": 36387
+  },
+  "fim": "2026-10-20 05:21:37.322"
+}
