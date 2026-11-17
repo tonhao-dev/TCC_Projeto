@@ -1,0 +1,183 @@
+{
+  "modo": "baseline_direto",
+  "conjunto": "seed",
+  "descricao": "Pergunta enviada direto ao modelo, sem RAG (sem interpreter/planner/retrieval/synthesizer). BERTScore medido contra a mesma referência factual do resultado híbrido.",
+  "modelo": "llama3.1",
+  "timestamp": "2026-10-12 21:48:08",
+  "geral": {
+    "total": 8,
+    "sucessos": 8,
+    "latencia_media_ms": 124802.125,
+    "bertscore_precision": -0.08887731283903122,
+    "bertscore_recall": -0.08148639232240384,
+    "bertscore_f1": -0.08454871852882206,
+    "precision_at_5": null,
+    "recall_at_5": null,
+    "f1_score": null,
+    "ndcg_at_5": null,
+    "mrr": null,
+    "entity_accuracy": null
+  },
+  "resultados": [
+    {
+      "id": "S1",
+      "tipo": "S",
+      "consulta": "Qual o total gasto em saúde no estado do Pará em 2023?",
+      "latencia_ms": 121060,
+      "resposta": "Infelizmente, não tenho acesso a informações atualizadas em tempo real, especialmente para o ano de 2023, pois as informações sobre gastos públicos são divulgadas com atraso. No entanto, posso fornecer informações sobre os gastos em saúde no estado do Pará em anos anteriores ou sobre como os gastos são distribuídos.\n\nDe acordo com os dados disponíveis no Portal da Transparência do Ministério da Economia, os gastos em saúde no estado do Pará variaram nos últimos anos. Em 2022, por exemplo, o valor total empenhado para o estado do Pará, em relação a emendas parlamentares para a área de saúde, não está disponível no momento da minha resposta. No entanto, posso fornecer dados sobre a distribuição de gastos em saúde em anos anteriores ou sobre como os gastos são distribuídos.\n\nSe você precisar de informações específicas sobre o ano de 2023, recomendo consultar o Portal da Transparência do Ministério da Economia ou o site da Secretaria de Estado da Saúde do Pará, que podem ter atualizações mais recentes. Além disso, é possível que os dados sejam disponibilizados após a conclusão do ano fiscal, geralmente no primeiro semestre do ano seguinte.\n\nSe você tiver alguma outra pergunta ou precisar de informações sobre outros anos ou áreas, estou à disposição para ajudar.",
+      "referencia": "Qual o total gasto em saúde no estado do Pará em 2023? Foram encontrados 2 registros no total. 1. Carlos Andrade (PSDB/PA), ano 2023, área Saúde, empenhado R$ 4,100,000.00, pago R$ 3,280,000.00. 2. Maria Souza (PT/PA), ano 2023, área Saúde, empenhado R$ 2,500,000.00, pago R$ 2,000,000.00.",
+      "metricas": {
+        "precision_at_5": null,
+        "recall_at_5": null,
+        "f1_score": null,
+        "ndcg_at_5": null,
+        "mrr": null,
+        "entity_accuracy": null,
+        "bertscore_precision": -0.05500322952866554,
+        "bertscore_recall": -0.037408385425806046,
+        "bertscore_f1": -0.04489567130804062
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S2",
+      "tipo": "S",
+      "consulta": "Quantas emendas foram destinadas ao Pará em 2022?",
+      "latencia_ms": 142947,
+      "resposta": "Infelizmente, não tenho acesso em tempo real a informações atualizadas sobre emendas parlamentares. No entanto, posso sugerir algumas fontes onde você pode encontrar essa informação:\n\n1. **Portal da Transparência do Orçamento**: O portal da transparência do orçamento é uma ferramenta do governo federal que fornece informações detalhadas sobre as emendas parlamentares, incluindo as destinadas a cada estado. Você pode acessar o portal e filtrar as informações por ano, estado e área temática.\n2. **Sistema Integrado de Administração Financeira (SIAFI)**: O SIAFI é o sistema de gestão financeira do governo federal e fornece informações sobre as emendas parlamentares, incluindo as destinadas a cada estado.\n3. **Relatórios da Câmara dos Deputados e do Senado Federal**: As duas casas legislativas também publicam relatórios sobre as emendas parlamentares, incluindo as destinadas a cada estado.\n\nSe você precisar de informações específicas, recomendo acessar essas fontes e filtrar as informações por ano (2022) e estado (Pará). Lembre-se de que as informações podem levar alguns dias para serem atualizadas.\n\nInfelizmente, não tenho acesso a informações em tempo real, então não posso fornecer um número exato de emendas destinadas ao Pará em 2022.",
+      "referencia": "Quantas emendas foram destinadas ao Pará em 2022? Foram encontrados 1 registros no total. 1. Maria Souza (PT/PA), ano 2022, área Saúde, empenhado R$ 1,800,000.00, pago R$ 1,440,000.00.",
+      "metricas": {
+        "precision_at_5": null,
+        "recall_at_5": null,
+        "f1_score": null,
+        "ndcg_at_5": null,
+        "mrr": null,
+        "entity_accuracy": null,
+        "bertscore_precision": -0.14575737714767456,
+        "bertscore_recall": -0.028482964262366295,
+        "bertscore_f1": -0.08782424032688141
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S3",
+      "tipo": "S",
+      "consulta": "Qual o total empenhado em emendas para São Paulo em 2024?",
+      "latencia_ms": 66328,
+      "resposta": "Desculpe, mas não tenho acesso a informações futuras ou em tempo real. Além disso, as informações sobre emendas parlamentares e gastos públicos são atualizadas periodicamente e podem variar ao longo do tempo.\n\nNo entanto, posso fornecer informações sobre o histórico de emendas parlamentares em São Paulo até o ano de 2023, se disponível. Se você precisar de informações sobre anos anteriores ou sobre outras áreas temáticas, estou à disposição para ajudar.",
+      "referencia": "Qual o total empenhado em emendas para São Paulo em 2024? Foram encontrados 1 registros no total. 1. João Pereira (PL/SP), ano 2024, área Educação, empenhado R$ 2,750,000.00, pago R$ 2,200,000.00.",
+      "metricas": {
+        "precision_at_5": null,
+        "recall_at_5": null,
+        "f1_score": null,
+        "ndcg_at_5": null,
+        "mrr": null,
+        "entity_accuracy": null,
+        "bertscore_precision": 0.021373145282268524,
+        "bertscore_recall": 0.0007857436430640519,
+        "bertscore_f1": 0.012301234528422356
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S4",
+      "tipo": "S",
+      "consulta": "Quais emendas de educação foram destinadas a São Paulo em 2023?",
+      "latencia_ms": 239245,
+      "resposta": "Infelizmente, não tenho acesso a informações em tempo real ou atualizadas até 2023. No entanto, posso sugerir algumas fontes onde você pode encontrar as informações sobre as emendas de educação destinadas a São Paulo em 2023:\n\n1. **Portal da Transparência do Orçamento Federal**: O portal da transparência do orçamento federal é uma ferramenta oficial do governo federal que fornece informações detalhadas sobre as emendas parlamentares, incluindo as destinadas a cada estado, incluindo São Paulo. Você pode acessar o portal e filtrar as informações por ano, autor, partido, UF, área temática e outros critérios.\n2. **Sistema Integrado de Administração Financeira (SIAFI)**: O SIAFI é o sistema de administração financeira do governo federal que registra as operações financeiras, incluindo as emendas parlamentares. Você pode acessar o SIAFI e buscar as informações sobre as emendas de educação destinadas a São Paulo em 2023.\n3. **Câmara dos Deputados e Senado Federal**: As duas casas legislativas também disponibilizam informações sobre as emendas parlamentares, incluindo as destinadas a cada estado. Você pode acessar os sites da Câmara dos Deputados e do Senado Federal e buscar as informações sobre as emendas de educação destinadas a São Paulo em 2023.\n\nLembre-se de que as informações disponíveis podem variar dependendo da fonte e da atualização dos dados. Se você precisar de informações mais precisas ou atualizadas, recomendo consultar as fontes oficiais mencionadas acima.",
+      "referencia": "Quais emendas de educação foram destinadas a São Paulo em 2023? Foram encontrados 1 registros no total. 1. João Pereira (PL/SP), ano 2023, área Educação, empenhado R$ 3,200,000.00, pago R$ 2,560,000.00.",
+      "metricas": {
+        "precision_at_5": null,
+        "recall_at_5": null,
+        "f1_score": null,
+        "ndcg_at_5": null,
+        "mrr": null,
+        "entity_accuracy": null,
+        "bertscore_precision": -0.1533290147781372,
+        "bertscore_recall": -0.027042649686336517,
+        "bertscore_f1": -0.09122797846794128
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S5",
+      "tipo": "S",
+      "consulta": "Quais emendas para transporte foram pagas em Minas Gerais em 2023?",
+      "latencia_ms": 140049,
+      "resposta": "Infelizmente, não tenho acesso a informações em tempo real ou atualizadas até 2023. No entanto, posso sugerir algumas fontes e métodos para você encontrar as informações desejadas:\n\n1. **Portal da Transparência**: O portal da Transparência do Governo Federal é uma ferramenta útil para consultar informações sobre emendas parlamentares. Você pode acessar o portal e filtrar as informações por ano, autor, partido, UF e área temática.\n2. **Sistema Integrado de Administração Financeira (SIAFI)**: O SIAFI é o sistema de gestão financeira do Governo Federal. Você pode acessar o sistema e consultar as informações sobre emendas parlamentares, incluindo as pagas em Minas Gerais.\n3. **Relatórios de Execução Orçamentária**: O Ministério do Planejamento, Orçamento e Gestão (MPOG) publica relatórios de execução orçamentária trimestral e anual. Você pode acessar esses relatórios e consultar as informações sobre emendas parlamentares pagas em Minas Gerais.\n\nLembre-se de que essas fontes podem ter informações atualizadas até o último dia útil do mês anterior. Se você precisar de informações mais recentes, pode ser necessário aguardar a publicação de novos relatórios.\n\nSe você tiver alguma dúvida específica ou precisar de ajuda para consultar as informações, sinta-se à vontade para perguntar!",
+      "referencia": "Quais emendas para transporte foram pagas em Minas Gerais em 2023? Foram encontrados 1 registros no total. 1. Beatriz Rocha (PP/MG), ano 2023, área Transporte, empenhado R$ 7,900,000.00, pago R$ 6,320,000.00. 2. Maria Souza (PT/PA), ano 2023, área Saúde, empenhado R$ 2,500,000.00, pago R$ 2,000,000.00. 3. Maria Souza (PT/PA), ano 2022, área Saúde, empenhado R$ 1,800,000.00, pago R$ 1,440,000.00. 4. Carlos Andrade (PSDB/PA), ano 2023, área Saúde, empenhado R$ 4,100,000.00, pago R$ 3,280,000.00. 5. Ana Lima (MDB/BA), ano 2023, área Educação, empenhado R$ 5,600,000.00, pago R$ 4,480,000.00. 6. Beatriz Rocha (PP/MG), ano 2024, área Saúde, empenhado R$ 3,400,000.00, pago R$ 2,720,000.00. 7. João Pereira (PL/SP), ano 2023, área Educação, empenhado R$ 3,200,000.00, pago R$ 2,560,000.00. 8. João Pereira (PL/SP), ano 2024, área Educação, empenhado R$ 2,750,000.00, pago R$ 2,200,000.00.",
+      "metricas": {
+        "precision_at_5": null,
+        "recall_at_5": null,
+        "f1_score": null,
+        "ndcg_at_5": null,
+        "mrr": null,
+        "entity_accuracy": null,
+        "bertscore_precision": -0.13777008652687073,
+        "bertscore_recall": -0.1878359168767929,
+        "bertscore_f1": -0.16169707477092743
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S6",
+      "tipo": "S",
+      "consulta": "Quais emendas de educação existem na Bahia em 2023?",
+      "latencia_ms": 151854,
+      "resposta": "Infelizmente, não tenho acesso a informações em tempo real e não posso fornecer dados atualizados em 2023. No entanto, posso sugerir algumas fontes onde você pode encontrar as informações sobre emendas de educação na Bahia em 2023:\n\n1. **Portal da Transparência do Governo Federal**: O portal da transparência do governo federal é uma ferramenta que permite consultar as emendas parlamentares, incluindo as relacionadas à educação. Você pode acessar o portal e filtrar as informações por autor, partido, UF, ano e área temática.\n2. **Portal da Câmara dos Deputados**: O portal da Câmara dos Deputados também oferece informações sobre emendas parlamentares, incluindo as relacionadas à educação. Você pode acessar o portal e consultar as emendas aprovadas e empenhadas.\n3. **Portal do Senado Federal**: O portal do Senado Federal também oferece informações sobre emendas parlamentares, incluindo as relacionadas à educação. Você pode acessar o portal e consultar as emendas aprovadas e empenhadas.\n4. **Secretaria da Educação da Bahia**: A Secretaria da Educação da Bahia também pode ter informações sobre emendas de educação na Bahia. Você pode acessar o site da secretaria e consultar as informações disponíveis.\n\nLembre-se de que as informações disponíveis podem variar dependendo da fonte e da atualização dos dados. Se você precisar de informações mais específicas ou atualizadas, é recomendável entrar em contato diretamente com as fontes mencionadas acima.",
+      "referencia": "Quais emendas de educação existem na Bahia em 2023? Foram encontrados 1 registros no total. 1. Ana Lima (MDB/BA), ano 2023, área Educação, empenhado R$ 5,600,000.00, pago R$ 4,480,000.00. 2. João Pereira (PL/SP), ano 2023, área Educação, empenhado R$ 3,200,000.00, pago R$ 2,560,000.00. 3. Maria Souza (PT/PA), ano 2023, área Saúde, empenhado R$ 2,500,000.00, pago R$ 2,000,000.00. 4. Maria Souza (PT/PA), ano 2022, área Saúde, empenhado R$ 1,800,000.00, pago R$ 1,440,000.00. 5. Carlos Andrade (PSDB/PA), ano 2023, área Saúde, empenhado R$ 4,100,000.00, pago R$ 3,280,000.00. 6. Beatriz Rocha (PP/MG), ano 2023, área Transporte, empenhado R$ 7,900,000.00, pago R$ 6,320,000.00. 7. Beatriz Rocha (PP/MG), ano 2024, área Saúde, empenhado R$ 3,400,000.00, pago R$ 2,720,000.00. 8. João Pereira (PL/SP), ano 2024, área Educação, empenhado R$ 2,750,000.00, pago R$ 2,200,000.00.",
+      "metricas": {
+        "precision_at_5": null,
+        "recall_at_5": null,
+        "f1_score": null,
+        "ndcg_at_5": null,
+        "mrr": null,
+        "entity_accuracy": null,
+        "bertscore_precision": -0.08594818413257599,
+        "bertscore_recall": -0.10367772728204727,
+        "bertscore_f1": -0.09344092756509781
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S7",
+      "tipo": "S",
+      "consulta": "Qual o total empenhado em saúde em Minas Gerais em 2024?",
+      "latencia_ms": 26629,
+      "resposta": "Desculpe, mas não tenho acesso a informações atualizadas ou futuras, incluindo dados específicos para o ano de 2024. Meus conhecimentos são limitados ao período até 2022 e não posso fornecer informações sobre o ano de 2024. Se você precisar de dados sobre o ano de 2022 ou anos anteriores, posso tentar ajudar com isso.",
+      "referencia": "Qual o total empenhado em saúde em Minas Gerais em 2024? Foram encontrados 1 registros no total. 1. Beatriz Rocha (PP/MG), ano 2024, área Saúde, empenhado R$ 3,400,000.00, pago R$ 2,720,000.00.",
+      "metricas": {
+        "precision_at_5": null,
+        "recall_at_5": null,
+        "f1_score": null,
+        "ndcg_at_5": null,
+        "mrr": null,
+        "entity_accuracy": null,
+        "bertscore_precision": -0.040600065141916275,
+        "bertscore_recall": -0.11311829835176468,
+        "bertscore_f1": -0.07626297324895859
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S8",
+      "tipo": "S",
+      "consulta": "Quais emendas de saúde foram destinadas ao Pará?",
+      "latencia_ms": 110305,
+      "resposta": "Infelizmente, não tenho acesso a informações em tempo real e não posso fornecer dados atualizados. No entanto, posso sugerir algumas fontes onde você pode encontrar as informações sobre emendas de saúde destinadas ao Pará:\n\n1. **Portal da Transparência**: O portal da Transparência é uma ferramenta do governo federal que fornece informações sobre a execução orçamentária e financeira do governo. Você pode acessar o portal e filtrar as informações por área temática (saúde), unidade federativa (Pará) e ano.\n2. **Sistema Integrado de Administração Financeira (SIAFI)**: O SIAFI é o sistema de administração financeira do governo federal. Você pode acessar o SIAFI e consultar as informações sobre emendas de saúde destinadas ao Pará.\n3. **Câmara dos Deputados**: A Câmara dos Deputados publica anualmente um relatório sobre a execução das emendas parlamentares. Você pode acessar o site da Câmara e procurar por relatórios sobre emendas de saúde destinadas ao Pará.\n4. **Senado Federal**: O Senado Federal também publica relatórios sobre a execução das emendas parlamentares. Você pode acessar o site do Senado e procurar por relatórios sobre emendas de saúde destinadas ao Pará.\n\nLembre-se de que essas fontes podem ter informações atualizadas até o ano anterior, pois as informações mais recentes podem levar alguns meses para serem publicadas.\n\nSe você precisar de ajuda para acessar essas fontes ou para entender como consultar as informações, estou aqui para ajudar!",
+      "referencia": "Quais emendas de saúde foram destinadas ao Pará? Foram encontrados 8 registros no total. 1. Beatriz Rocha (PP/MG), ano 2023, área Transporte, empenhado R$ 7,900,000.00, pago R$ 6,320,000.00. 2. Carlos Andrade (PSDB/PA), ano 2023, área Saúde, empenhado R$ 4,100,000.00, pago R$ 3,280,000.00. 3. Ana Lima (MDB/BA), ano 2023, área Educação, empenhado R$ 5,600,000.00, pago R$ 4,480,000.00. 4. Beatriz Rocha (PP/MG), ano 2024, área Saúde, empenhado R$ 3,400,000.00, pago R$ 2,720,000.00. 5. João Pereira (PL/SP), ano 2023, área Educação, empenhado R$ 3,200,000.00, pago R$ 2,560,000.00. 6. Maria Souza (PT/PA), ano 2022, área Saúde, empenhado R$ 1,800,000.00, pago R$ 1,440,000.00. 7. Maria Souza (PT/PA), ano 2023, área Saúde, empenhado R$ 2,500,000.00, pago R$ 2,000,000.00. 8. João Pereira (PL/SP), ano 2024, área Educação, empenhado R$ 2,750,000.00, pago R$ 2,200,000.00.",
+      "metricas": {
+        "precision_at_5": null,
+        "recall_at_5": null,
+        "f1_score": null,
+        "ndcg_at_5": null,
+        "mrr": null,
+        "entity_accuracy": null,
+        "bertscore_precision": -0.11398369073867798,
+        "bertscore_recall": -0.1551109403371811,
+        "bertscore_f1": -0.13334211707115173
+      },
+      "sucesso": true
+    }
+  ]
+}

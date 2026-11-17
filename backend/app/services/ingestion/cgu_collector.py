@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 import re
+from datetime import datetime, timedelta, timezone
 import httpx
 from typing import AsyncGenerator
 from app.config import settings
@@ -8,6 +9,17 @@ from app.utils.rate_limiter import RateLimiter
 import structlog
 
 logger = structlog.get_logger()
+
+_BRASILIA = timezone(timedelta(hours=-3))  # sem horário de verão desde 2019
+
+
+def rpm_vigente(agora: datetime | None = None) -> int:
+    """Limite por chave no horário atual de Brasília (00h-06h tem cota maior)."""
+    noite = settings.CGU_RATE_LIMIT_RPM_NOITE
+    hora = (agora or datetime.now(_BRASILIA)).astimezone(_BRASILIA).hour
+    if noite and hora < 6:
+        return noite
+    return settings.CGU_RATE_LIMIT_RPM
 
 ESTADOS = {
     "ACRE": "AC", "ALAGOAS": "AL", "AMAPÁ": "AP", "AMAZONAS": "AM",
@@ -43,6 +55,10 @@ class CGUCollector:
     """Coletor de dados de emendas do Portal da Transparência."""
 
     BASE_URL = "https://api.portaldatransparencia.gov.br/api-de-dados"
+    # Bloqueios 401/403 do WAF duram 1 a 2 minutos: espera 15, 30, 45 e 60 s antes de
+    # desistir da emenda (e aí ela vai para retry_doc e, se continuar, para a DLQ).
+    MAX_BLOQUEIOS_DOCS = 4
+    ESPERA_BLOQUEIO_DOCS_S = 15
 
     def __init__(self):
         # Collect all API keys for rotation
@@ -55,7 +71,8 @@ class CGUCollector:
         self._key_index = 0
         self._key_lock = asyncio.Lock()
         # Rate limiter POR CHAVE — cada chave tem seu próprio limite
-        rpm_per_key = settings.CGU_RATE_LIMIT_RPM  # 400 RPM por chave
+        rpm_per_key = rpm_vigente()
+        self._rpm_atual = rpm_per_key
         self._rate_limiters = {key: RateLimiter(rpm_per_key) for key in keys}
         # Manter rate_limiter global para compatibilidade (endpoints que não usam _next_headers_with_limit)
         total_rpm = rpm_per_key * len(keys)
@@ -80,6 +97,12 @@ class CGUCollector:
     async def _acquire_and_get_headers(self) -> dict:
         """Rotate to next key AND acquire its per-key rate limiter."""
         async with self._key_lock:
+            rpm = rpm_vigente()
+            if rpm != self._rpm_atual:  # virada 00h/06h em Brasília
+                self._rpm_atual = rpm
+                for limiter in self._rate_limiters.values():
+                    limiter.rpm, limiter.interval = rpm, 60.0 / rpm
+                logger.info("rpm_ajustado", rpm_por_chave=rpm)
             key = self._api_keys[self._key_index % len(self._api_keys)]
             self._key_index += 1
         await self._rate_limiters[key].acquire()
@@ -180,12 +203,19 @@ class CGUCollector:
 
     @staticmethod
     def _parse_valor(valor_str) -> float:
-        """Converte string monetária BR para float."""
+        """Converte string monetária BR para float.
+
+        A API às vezes separa o sinal do número ("- 4.504,92"), então todo
+        espaço é removido antes da conversão. Sem dígitos ("-") vale 0.
+        """
         if not valor_str:
             return 0.0
         if isinstance(valor_str, (int, float)):
             return float(valor_str)
-        return float(str(valor_str).replace(".", "").replace(",", "."))
+        limpo = "".join(str(valor_str).split())
+        if not any(ch.isdigit() for ch in limpo):
+            return 0.0
+        return float(limpo.replace(".", "").replace(",", "."))
 
     @staticmethod
     def _extrair_uf(localidade: str) -> str:
@@ -249,6 +279,7 @@ class CGUCollector:
         documentos = []
         pagina = 1
         network_retries = 0
+        bloqueios = 0
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             while True:
@@ -263,6 +294,17 @@ class CGUCollector:
                     if response.status_code == 429:
                         logger.warning("rate_limit_hit_docs", codigo=codigo_emenda)
                         await asyncio.sleep(10)
+                        continue
+
+                    if response.status_code in (401, 403):
+                        # Bloqueio passageiro do WAF da CGU. Antes isto caía no break
+                        # abaixo e a emenda ficava sem documentos, sem erro nem DLQ.
+                        bloqueios += 1
+                        if bloqueios > self.MAX_BLOQUEIOS_DOCS:
+                            response.raise_for_status()  # vira exceção: retry_doc e DLQ
+                        logger.warning("bloqueio_docs", status=response.status_code,
+                                       codigo=codigo_emenda, tentativa=bloqueios)
+                        await asyncio.sleep(self.ESPERA_BLOQUEIO_DOCS_S * bloqueios)
                         continue
 
                     if response.status_code == 404:
@@ -287,6 +329,7 @@ class CGUCollector:
 
                     pagina += 1
                     network_retries = 0  # reset on success
+                    bloqueios = 0
 
                 except httpx.HTTPStatusError as e:
                     logger.error("http_error_docs", status=e.response.status_code,
@@ -294,7 +337,8 @@ class CGUCollector:
                     if e.response.status_code >= 500:
                         await asyncio.sleep(30)
                         continue
-                    break
+                    # Devolver a lista parcial aqui gravava a emenda como completa.
+                    raise
                 except (httpx.ReadError, httpx.ConnectError, httpx.RemoteProtocolError,
                         httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                     network_retries += 1
@@ -302,7 +346,7 @@ class CGUCollector:
                                    codigo=codigo_emenda, retry=network_retries)
                     if network_retries >= max_network_retries:
                         logger.error("max_retries_docs", codigo=codigo_emenda)
-                        break
+                        raise
                     await asyncio.sleep(10)
                     continue
 
@@ -389,7 +433,7 @@ class CGUCollector:
                     headers=headers,
                 )
 
-                if response.status_code in (429, 401, 405):
+                if response.status_code in (429, 401, 403, 405):
                     network_retries += 1
                     if network_retries <= 2:
                         logger.warning("rate_limit_or_auth_retry",
@@ -425,7 +469,8 @@ class CGUCollector:
                                codigo=codigo_documento, retry=network_retries)
                 if network_retries >= max_network_retries:
                     logger.error("max_retries_detalhe", codigo=codigo_documento)
-                    return None
+                    # None marcaria o documento como coletado sem detalhe (igual a 404).
+                    raise
                 await asyncio.sleep(10)
                 continue
 

@@ -50,6 +50,131 @@ def _normalizar_texto(texto: str) -> str:
     return "".join(c for c in nfkd if not unicodedata.combining(c)).lower().strip()
 
 
+# ============================================
+# BERTScore (Zhang et al., ICLR 2020)
+# "BERTScore: Evaluating Text Generation with BERT"
+# Mede fidelidade da resposta gerada pelo LLM (candidato) contra uma
+# referência textual determinística construída a partir dos dados reais
+# recuperados do banco (gabarito factual, sem o LLM).
+# ============================================
+
+# Scorer carregado uma única vez (modelo multilíngue é caro de inicializar).
+_BERT_SCORER = None
+_BERT_SCORER_FALHOU = False
+
+
+def _get_bert_scorer():
+    """Inicializa (lazy) o BERTScorer multilíngue para português.
+
+    Usa `lang="pt"` -> bert-base-multilingual-cased com arquivo de baseline,
+    e `rescale_with_baseline=True` para mapear os scores a uma faixa mais
+    interpretável (Zhang et al. recomendam o rescale para leitura humana).
+    Retorna None se o pacote/modelo não puder ser carregado (avaliação segue
+    sem BERTScore em vez de abortar).
+    """
+    global _BERT_SCORER, _BERT_SCORER_FALHOU
+    if _BERT_SCORER is not None or _BERT_SCORER_FALHOU:
+        return _BERT_SCORER
+    try:
+        from bert_score import BERTScorer
+        _BERT_SCORER = BERTScorer(
+            lang="pt",
+            rescale_with_baseline=True,
+            use_fast_tokenizer=True,
+        )
+        logger.info("bert_scorer_carregado", lang="pt",
+                     model=_BERT_SCORER._model_type)
+    except Exception as e:
+        _BERT_SCORER_FALHOU = True
+        logger.warning("bert_scorer_indisponivel", erro=str(e))
+    return _BERT_SCORER
+
+
+def construir_referencia(resultado: dict, consulta_def: dict) -> str:
+    """Constrói uma referência textual determinística (gabarito factual).
+
+    BERTScore precisa de um texto de referência por candidato. Como o
+    conjunto de avaliação define apenas entidades estruturadas em `esperado`,
+    derivamos aqui um texto-gabarito a partir dos DADOS REAIS recuperados do
+    banco (os mesmos que o synthesizer recebeu) + os totais agregados. Isso
+    mede o quanto a resposta do LLM reflete fielmente os dados, sem premiar
+    "fluência" desconectada dos fatos.
+
+    A referência é factual e enxuta: enumera os registros com autor, partido,
+    UF, ano, função e valores, prefixada pela consulta e pelos totais quando
+    a operação é agregada.
+    """
+    esperado = consulta_def.get("esperado", {})
+    dados = resultado.get("dados", []) or []
+    operacao = esperado.get("operacao", "busca")
+    meta = resultado.get("metadata", {})
+    total_no_banco = meta.get("total_no_banco")
+
+    partes = [consulta_def.get("consulta", "").strip()]
+
+    if total_no_banco is not None:
+        partes.append(f"Foram encontrados {total_no_banco} registros no total.")
+
+    # Totais agregados (soma/contagem/media): reconstruir a partir dos dados
+    if operacao in ("soma", "contagem", "media") and dados:
+        d0 = dados[0]
+        if d0.get("total_empenhado"):
+            partes.append(f"Total empenhado: R$ {d0['total_empenhado']:,.2f}.")
+        if d0.get("total_pago"):
+            partes.append(f"Total pago: R$ {d0['total_pago']:,.2f}.")
+        if d0.get("quantidade"):
+            partes.append(f"Quantidade: {d0['quantidade']} emendas.")
+
+    # Registros individuais (até 10, suficiente para fidelidade factual)
+    for i, d in enumerate(dados[:10], 1):
+        autor = d.get("nome_autor", "N/A")
+        partido = d.get("partido", "N/A")
+        uf = d.get("uf", "N/A")
+        ano = d.get("ano", "N/A")
+        funcao = d.get("funcao_nome", "N/A")
+        empenhado = d.get("valor_empenhado") or d.get("total_empenhado") or 0
+        pago = d.get("valor_pago") or d.get("total_pago") or 0
+        linha = (
+            f"{i}. {autor} ({partido}/{uf}), ano {ano}, área {funcao}, "
+            f"empenhado R$ {empenhado:,.2f}, pago R$ {pago:,.2f}."
+        )
+        if d.get("beneficiario_nome"):
+            linha += f" Beneficiário: {d['beneficiario_nome']}."
+        partes.append(linha)
+
+    if not dados:
+        partes.append(
+            "Não foram encontrados dados correspondentes aos filtros da consulta."
+        )
+
+    return " ".join(p for p in partes if p)
+
+
+def calcular_bertscore(candidato: str, referencia: str) -> Optional[dict]:
+    """Calcula BERTScore (P, R, F1) entre a resposta gerada e a referência.
+
+    Returns dict com precision/recall/f1 ou None se o scorer indisponível
+    ou se candidato/referência vazios.
+    """
+    scorer = _get_bert_scorer()
+    if scorer is None:
+        return None
+    cand = (candidato or "").strip()
+    ref = (referencia or "").strip()
+    if not cand or not ref:
+        return None
+    try:
+        P, R, F1 = scorer.score([cand], [ref])
+        return {
+            "precision": float(P[0]),
+            "recall": float(R[0]),
+            "f1": float(F1[0]),
+        }
+    except Exception as e:
+        logger.warning("bertscore_erro", erro=str(e))
+        return None
+
+
 _CAMPOS_CONTROLE = {"busca_documentos", "busca_beneficiario", "operacao",
                      "ano_inicio", "ano_fim"}
 
@@ -200,8 +325,8 @@ def _calcular_score_relevancia(d: dict, esperado: dict) -> float:
     return score
 
 
-def avaliar_resultado(resultado: dict, consulta_def: dict) -> dict:
-    """Avalia um resultado individual com todas as métricas.
+def _avaliar_retrieval(resultado: dict, consulta_def: dict) -> dict:
+    """Avalia as métricas de recuperação (retrieval) de um resultado.
 
     Métricas:
     - P@5: sempre divide por K=5 (penaliza <5 resultados)
@@ -304,6 +429,29 @@ def avaliar_resultado(resultado: dict, consulta_def: dict) -> dict:
     }
 
 
+def avaliar_resultado(resultado: dict, consulta_def: dict,
+                      calcular_bert: bool = True) -> dict:
+    """Avalia um resultado com métricas de retrieval + BERTScore de geração.
+
+    BERTScore (Zhang et al., ICLR 2020) compara a resposta em linguagem
+    natural gerada pelo LLM contra uma referência factual determinística
+    construída a partir dos dados reais recuperados. Mede fidelidade da
+    geração; é independente das métricas de retrieval (P@5, R@5, etc.).
+    """
+    metricas = _avaliar_retrieval(resultado, consulta_def)
+
+    if calcular_bert:
+        candidato = resultado.get("resposta") or resultado.get("resumo") or ""
+        referencia = construir_referencia(resultado, consulta_def)
+        bert = calcular_bertscore(candidato, referencia)
+        if bert is not None:
+            metricas["bertscore_precision"] = bert["precision"]
+            metricas["bertscore_recall"] = bert["recall"]
+            metricas["bertscore_f1"] = bert["f1"]
+
+    return metricas
+
+
 def calcular_metricas_agregadas(resultados: list[dict]) -> dict:
     """Calcula métricas agregadas para um conjunto de resultados."""
     if not resultados:
@@ -314,10 +462,12 @@ def calcular_metricas_agregadas(resultados: list[dict]) -> dict:
         return {"total": len(resultados), "sucessos": 0}
 
     metricas_keys = ["entity_accuracy", "precision_at_5", "recall_at_5",
-                     "f1_score", "ndcg_at_5", "mrr"]
+                     "f1_score", "ndcg_at_5", "mrr",
+                     "bertscore_precision", "bertscore_recall", "bertscore_f1"]
     agregadas = {}
     for key in metricas_keys:
-        valores = [r["metricas"][key] for r in sucessos if "metricas" in r]
+        valores = [r["metricas"][key] for r in sucessos
+                   if "metricas" in r and key in r["metricas"]]
         agregadas[key] = sum(valores) / len(valores) if valores else 0
 
     agregadas["latencia_media_ms"] = sum(r["latencia_ms"] for r in sucessos) / len(sucessos)
@@ -441,6 +591,24 @@ async def executar_avaliacao(modo: str = "hibrido"):
               f"{geral.get('ndcg_at_5', 0):>8.2%} "
               f"{geral.get('mrr', 0):>8.2%} "
               f"{geral.get('latencia_media_ms', 0):>10.0f}")
+
+        # Tabela BERTScore (fidelidade da geração do LLM vs. referência factual)
+        tem_bert = any(t.get("bertscore_f1") for t in tipos.values()) or geral.get("bertscore_f1")
+        if tem_bert:
+            print(f"\n  BERTScore (resposta gerada vs. referência factual dos dados)")
+            print(f"  {'Tipo':<8} {'BERT-P':>10} {'BERT-R':>10} {'BERT-F1':>10}")
+            print(f"  {'-'*40}")
+            for tipo, metricas in tipos.items():
+                nome_tipo = {"A": "Factual", "B": "Semântico", "C": "Complexo", "D": "Benefic."}.get(tipo, tipo)
+                print(f"  {nome_tipo:<8} "
+                      f"{metricas.get('bertscore_precision', 0):>10.2%} "
+                      f"{metricas.get('bertscore_recall', 0):>10.2%} "
+                      f"{metricas.get('bertscore_f1', 0):>10.2%}")
+            print(f"  {'-'*40}")
+            print(f"  {'GERAL':<8} "
+                  f"{geral.get('bertscore_precision', 0):>10.2%} "
+                  f"{geral.get('bertscore_recall', 0):>10.2%} "
+                  f"{geral.get('bertscore_f1', 0):>10.2%}")
 
         # Distribuição de estratégias do planner (modo híbrido)
         strat_counts = {}

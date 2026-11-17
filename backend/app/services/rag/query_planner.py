@@ -1,8 +1,8 @@
 import json
 import re
-from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from app.config import settings
+from app.services.rag.llm_factory import build_chat_llm
 import structlog
 
 logger = structlog.get_logger()
@@ -45,9 +45,7 @@ class QueryPlanner:
     """Classifica consultas e define estratégia de busca."""
 
     def __init__(self):
-        self.llm = ChatAnthropic(
-            model=settings.ANTHROPIC_MODEL,
-            api_key=settings.ANTHROPIC_API_KEY,
+        self.llm = build_chat_llm(
             max_tokens=256,
             temperature=0,
         )

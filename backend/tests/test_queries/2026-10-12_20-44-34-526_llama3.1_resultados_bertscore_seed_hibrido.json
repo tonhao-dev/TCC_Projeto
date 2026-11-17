@@ -1,0 +1,326 @@
+{
+  "modo": "hibrido",
+  "conjunto": "seed",
+  "timestamp": "2026-10-12 20:44:34",
+  "geral": {
+    "entity_accuracy": 0.8333333333333334,
+    "precision_at_5": 0.25,
+    "recall_at_5": 1.015625,
+    "f1_score": 0.38232600732600736,
+    "ndcg_at_5": 1.018257715207588,
+    "mrr": 0.9375,
+    "bertscore_precision": 0.1364071611315012,
+    "bertscore_recall": 0.20053494768217206,
+    "bertscore_f1": 0.1657005213201046,
+    "latencia_media_ms": 205788.375,
+    "total": 8,
+    "sucessos": 8
+  },
+  "resultados": [
+    {
+      "id": "S1",
+      "tipo": "S",
+      "consulta": "Qual o total gasto em saúde no estado do Pará em 2023?",
+      "latencia_ms": 151009,
+      "num_resultados": 2,
+      "total_no_banco": 2,
+      "modo": "hibrido",
+      "resposta": "Os dados apresentados mostram que em 2023, foram destinados R$ 4.100.000,00 para a função Saúde, subfunção Assistência Hospitalar, e R$ 2.500.000,00 para a função Saúde, subfunção Atenção Básica, no estado do Pará. Além disso, os valores pagos foram R$ 3.280.000,00 e R$ 2.000.000,00, respectivamente.\n\nOs dados podem ser verificados no Portal da Transparência (CGU) e na Câmara dos Deputados.",
+      "referencia": "Qual o total gasto em saúde no estado do Pará em 2023? Foram encontrados 2 registros no total. 1. Carlos Andrade (PSDB/PA), ano 2023, área Saúde, empenhado R$ 4,100,000.00, pago R$ 3,280,000.00. 2. Maria Souza (PT/PA), ano 2023, área Saúde, empenhado R$ 2,500,000.00, pago R$ 2,000,000.00.",
+      "metricas": {
+        "entity_accuracy": 1.0,
+        "entity_details": {
+          "uf": {
+            "esperado": "PA",
+            "extraido": "PA",
+            "ok": true
+          },
+          "ano": {
+            "esperado": 2023,
+            "extraido": 2023,
+            "ok": true
+          },
+          "area": {
+            "esperado": "saude",
+            "extraido": "saúde",
+            "ok": true
+          }
+        },
+        "precision_at_5": 0.4,
+        "recall_at_5": 1.0,
+        "f1_score": 0.5714285714285715,
+        "ndcg_at_5": 1.0,
+        "mrr": 1.0,
+        "bertscore_precision": 0.2244255393743515,
+        "bertscore_recall": 0.23291929066181183,
+        "bertscore_f1": 0.2296634316444397
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S2",
+      "tipo": "S",
+      "consulta": "Quantas emendas foram destinadas ao Pará em 2022?",
+      "latencia_ms": 178840,
+      "num_resultados": 1,
+      "total_no_banco": 1,
+      "modo": "hibrido",
+      "resposta": "A pergunta do cidadão refere-se a emendas destinadas ao Pará em 2022. De acordo com os dados disponíveis, foram encontradas 1 emenda no total. A tabela abaixo apresenta os detalhes da emenda encontrada.\n\n| Ano | Estado | Valor | Fonte |\n| --- | --- | --- | --- |\n| 2022 | Pará | R$ 1.234.567,89 | Portal da Transparência (CGU) |\n\nA emenda encontrada foi destinada ao Pará em 2022, com um valor de R$ 1.234.567,89. Esses dados podem ser verificados no Portal da Transparência (CGU) ou na Câmara dos Deputados.\n\nSUGESTÕES:\n| Pergunta complementar 1: Quais foram as emendas com maior valor destinadas ao Pará em 2022? |\n| Pergunta complementar 2: Quais foram os deputados responsáveis por essas emendas? |\n| Pergunta complementar 3: Quais foram os projetos de lei associados a essas emendas? |\n\nCOMPLETUDE DOS DADOS:\n- Total de registros no banco: 1\n- Registros apresentados: 1\n- Status: DADOS COMPLETOS — todos os registros encontrados estão apresentados abaixo.",
+      "referencia": "Quantas emendas foram destinadas ao Pará em 2022? Foram encontrados 1 registros no total. 1. Maria Souza (PT/PA), ano 2022, área Saúde, empenhado R$ 1,800,000.00, pago R$ 1,440,000.00.",
+      "metricas": {
+        "entity_accuracy": 1.0,
+        "entity_details": {
+          "uf": {
+            "esperado": "PA",
+            "extraido": "PA",
+            "ok": true
+          },
+          "ano": {
+            "esperado": 2022,
+            "extraido": 2022,
+            "ok": true
+          }
+        },
+        "precision_at_5": 0.2,
+        "recall_at_5": 1.0,
+        "f1_score": 0.33333333333333337,
+        "ndcg_at_5": 1.0,
+        "mrr": 1.0,
+        "bertscore_precision": -0.08560207486152649,
+        "bertscore_recall": 0.23866696655750275,
+        "bertscore_f1": 0.06305669248104095
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S3",
+      "tipo": "S",
+      "consulta": "Qual o total empenhado em emendas para São Paulo em 2024?",
+      "latencia_ms": 162114,
+      "num_resultados": 1,
+      "total_no_banco": 1,
+      "modo": "hibrido",
+      "resposta": "Os dados fornecidos não incluem informações sobre emendas para São Paulo em 2024. A única informação disponível é a quantidade de registros, que é 1, mas não há dados específicos sobre emendas para São Paulo em 2024. Para obter informações precisas, é recomendável consultar diretamente o Portal da Transparência (CGU) ou a Câmara dos Deputados.",
+      "referencia": "Qual o total empenhado em emendas para São Paulo em 2024? Foram encontrados 1 registros no total. 1. João Pereira (PL/SP), ano 2024, área Educação, empenhado R$ 2,750,000.00, pago R$ 2,200,000.00.",
+      "metricas": {
+        "entity_accuracy": 1.0,
+        "entity_details": {
+          "uf": {
+            "esperado": "SP",
+            "extraido": "SP",
+            "ok": true
+          },
+          "ano": {
+            "esperado": 2024,
+            "extraido": 2024,
+            "ok": true
+          }
+        },
+        "precision_at_5": 0.2,
+        "recall_at_5": 1.0,
+        "f1_score": 0.33333333333333337,
+        "ndcg_at_5": 1.0,
+        "mrr": 1.0,
+        "bertscore_precision": 0.14100462198257446,
+        "bertscore_recall": 0.045839522033929825,
+        "bertscore_f1": 0.09334853291511536
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S4",
+      "tipo": "S",
+      "consulta": "Quais emendas de educação foram destinadas a São Paulo em 2023?",
+      "latencia_ms": 202538,
+      "num_resultados": 1,
+      "total_no_banco": 1,
+      "modo": "hibrido",
+      "resposta": "A emenda foi apresentada pelo deputado João Pereira, do Partido Liberal (PL), em 2023. Ela foi destinada à subfunção de Ensino Fundamental, dentro da função de Educação. O valor empenhado foi de R$ 3.200.000,00, e o valor pago foi de R$ 2.560.000,00.\n\nFonte: Portal da Transparência (CGU) e Câmara dos Deputados.\n\nSUGESTÕES:\n| Pergunta complementar | \n| --- | \n| Quais são as principais subfunções de Educação que receberam emendas em 2023? | \n| Qual foi o partido político com mais emendas de Educação em 2023? | \n| Quais são os valores empenhados e pagos para as emendas de Educação em 2023? |\n\nCOMPLETUDE DOS DADOS:\n- Total de registros no banco: 1\n- Registros apresentados: 1\n- Status: DADOS COMPLETOS — todos os registros encontrados estão apresentados abaixo.",
+      "referencia": "Quais emendas de educação foram destinadas a São Paulo em 2023? Foram encontrados 1 registros no total. 1. João Pereira (PL/SP), ano 2023, área Educação, empenhado R$ 3,200,000.00, pago R$ 2,560,000.00.",
+      "metricas": {
+        "entity_accuracy": 1.0,
+        "entity_details": {
+          "area": {
+            "esperado": "educacao",
+            "extraido": "educação",
+            "ok": true
+          },
+          "uf": {
+            "esperado": "SP",
+            "extraido": "SP",
+            "ok": true
+          },
+          "ano": {
+            "esperado": 2023,
+            "extraido": 2023,
+            "ok": true
+          }
+        },
+        "precision_at_5": 0.2,
+        "recall_at_5": 1.0,
+        "f1_score": 0.33333333333333337,
+        "ndcg_at_5": 1.0,
+        "mrr": 1.0,
+        "bertscore_precision": 0.03686495125293732,
+        "bertscore_recall": 0.35092949867248535,
+        "bertscore_f1": 0.18202531337738037
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S5",
+      "tipo": "S",
+      "consulta": "Quais emendas para transporte foram pagas em Minas Gerais em 2023?",
+      "latencia_ms": 255782,
+      "num_resultados": 8,
+      "total_no_banco": 1,
+      "modo": "hibrido",
+      "resposta": "Apenas uma emenda relacionada ao transporte foi encontrada para o ano de 2023, pertencente à deputada Beatriz Rocha, do Partido Progressista (PP), no estado de Minas Gerais. A emenda foi para a subfunção de Transporte Rodoviário e teve um valor empenhado de R$ 7.900.000,00 e pago de R$ 6.320.000,00.",
+      "referencia": "Quais emendas para transporte foram pagas em Minas Gerais em 2023? Foram encontrados 1 registros no total. 1. Beatriz Rocha (PP/MG), ano 2023, área Transporte, empenhado R$ 7,900,000.00, pago R$ 6,320,000.00. 2. Maria Souza (PT/PA), ano 2023, área Saúde, empenhado R$ 2,500,000.00, pago R$ 2,000,000.00. 3. Maria Souza (PT/PA), ano 2022, área Saúde, empenhado R$ 1,800,000.00, pago R$ 1,440,000.00. 4. Carlos Andrade (PSDB/PA), ano 2023, área Saúde, empenhado R$ 4,100,000.00, pago R$ 3,280,000.00. 5. Ana Lima (MDB/BA), ano 2023, área Educação, empenhado R$ 5,600,000.00, pago R$ 4,480,000.00. 6. Beatriz Rocha (PP/MG), ano 2024, área Saúde, empenhado R$ 3,400,000.00, pago R$ 2,720,000.00. 7. João Pereira (PL/SP), ano 2023, área Educação, empenhado R$ 3,200,000.00, pago R$ 2,560,000.00. 8. João Pereira (PL/SP), ano 2024, área Educação, empenhado R$ 2,750,000.00, pago R$ 2,200,000.00.",
+      "metricas": {
+        "entity_accuracy": 1.0,
+        "entity_details": {
+          "area": {
+            "esperado": "transporte",
+            "extraido": "transporte",
+            "ok": true
+          },
+          "uf": {
+            "esperado": "MG",
+            "extraido": "MG",
+            "ok": true
+          },
+          "ano": {
+            "esperado": 2023,
+            "extraido": 2023,
+            "ok": true
+          }
+        },
+        "precision_at_5": 0.2,
+        "recall_at_5": 1.0,
+        "f1_score": 0.33333333333333337,
+        "ndcg_at_5": 1.3218798041954205,
+        "mrr": 1.0,
+        "bertscore_precision": 0.12162891030311584,
+        "bertscore_recall": 0.018561050295829773,
+        "bertscore_f1": 0.06981651484966278
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S6",
+      "tipo": "S",
+      "consulta": "Quais emendas de educação existem na Bahia em 2023?",
+      "latencia_ms": 218582,
+      "num_resultados": 8,
+      "total_no_banco": 1,
+      "modo": "hibrido",
+      "resposta": "A pergunta do cidadão se refere a emendas de educação na Bahia em 2023. \nOs dados disponíveis mostram que há 2 emendas de educação na Bahia em 2023. \nA primeira é de autoria de Ana Lima, do MDB, com valor empenhado de R$ 5.600.000,00 e pago de R$ 4.480.000,00. \nA segunda é de autoria de João Pereira, do PL, com valor empenhado de R$ 3.200.000,00 e pago de R$ 2.560.000,00. \nEsses dados podem ser verificados no Portal da Transparência (CGU) e/ou Câmara dos Deputados.",
+      "referencia": "Quais emendas de educação existem na Bahia em 2023? Foram encontrados 1 registros no total. 1. Ana Lima (MDB/BA), ano 2023, área Educação, empenhado R$ 5,600,000.00, pago R$ 4,480,000.00. 2. João Pereira (PL/SP), ano 2023, área Educação, empenhado R$ 3,200,000.00, pago R$ 2,560,000.00. 3. Maria Souza (PT/PA), ano 2023, área Saúde, empenhado R$ 2,500,000.00, pago R$ 2,000,000.00. 4. Maria Souza (PT/PA), ano 2022, área Saúde, empenhado R$ 1,800,000.00, pago R$ 1,440,000.00. 5. Carlos Andrade (PSDB/PA), ano 2023, área Saúde, empenhado R$ 4,100,000.00, pago R$ 3,280,000.00. 6. Beatriz Rocha (PP/MG), ano 2023, área Transporte, empenhado R$ 7,900,000.00, pago R$ 6,320,000.00. 7. Beatriz Rocha (PP/MG), ano 2024, área Saúde, empenhado R$ 3,400,000.00, pago R$ 2,720,000.00. 8. João Pereira (PL/SP), ano 2024, área Educação, empenhado R$ 2,750,000.00, pago R$ 2,200,000.00.",
+      "metricas": {
+        "entity_accuracy": 1.0,
+        "entity_details": {
+          "area": {
+            "esperado": "educacao",
+            "extraido": "educação",
+            "ok": true
+          },
+          "uf": {
+            "esperado": "BA",
+            "extraido": "BA",
+            "ok": true
+          },
+          "ano": {
+            "esperado": 2023,
+            "extraido": 2023,
+            "ok": true
+          }
+        },
+        "precision_at_5": 0.4,
+        "recall_at_5": 2.0,
+        "f1_score": 0.6666666666666667,
+        "ndcg_at_5": 1.5475949313695965,
+        "mrr": 1.0,
+        "bertscore_precision": 0.3038742244243622,
+        "bertscore_recall": 0.3281049132347107,
+        "bertscore_f1": 0.3168042302131653
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S7",
+      "tipo": "S",
+      "consulta": "Qual o total empenhado em saúde em Minas Gerais em 2024?",
+      "latencia_ms": 229671,
+      "num_resultados": 1,
+      "total_no_banco": 1,
+      "modo": "hibrido",
+      "resposta": "Os dados fornecidos não incluem informações sobre empenhos em saúde em Minas Gerais para o ano de 2024. A fonte primária utilizada é o Portal da Transparência (CGU), mas não há registros disponíveis para esse ano específico. Além disso, a quantidade de registros encontrada é de 1, o que pode não ser suficiente para fornecer informações precisas sobre o total empenhado em saúde em Minas Gerais em 2024.",
+      "referencia": "Qual o total empenhado em saúde em Minas Gerais em 2024? Foram encontrados 1 registros no total. 1. Beatriz Rocha (PP/MG), ano 2024, área Saúde, empenhado R$ 3,400,000.00, pago R$ 2,720,000.00.",
+      "metricas": {
+        "entity_accuracy": 0.6666666666666666,
+        "entity_details": {
+          "area": {
+            "esperado": "saude",
+            "extraido": "saýe",
+            "ok": false
+          },
+          "uf": {
+            "esperado": "MG",
+            "extraido": "MG",
+            "ok": true
+          },
+          "ano": {
+            "esperado": 2024,
+            "extraido": 2024,
+            "ok": true
+          }
+        },
+        "precision_at_5": 0.2,
+        "recall_at_5": 1.0,
+        "f1_score": 0.33333333333333337,
+        "ndcg_at_5": 1.0,
+        "mrr": 1.0,
+        "bertscore_precision": 0.16728854179382324,
+        "bertscore_recall": 0.15459708869457245,
+        "bertscore_f1": 0.16200995445251465
+      },
+      "sucesso": true
+    },
+    {
+      "id": "S8",
+      "tipo": "S",
+      "consulta": "Quais emendas de saúde foram destinadas ao Pará?",
+      "latencia_ms": 247771,
+      "num_resultados": 8,
+      "total_no_banco": 8,
+      "modo": "hibrido",
+      "resposta": "Os dados disponíveis permitem a filtragem por classificação funcional (função, subfunção) e UF, mas não por instituição beneficiária. Portanto, não é possível identificar emendas de saúde destinadas especificamente ao Pará. No entanto, podemos observar que houve emendas de saúde destinadas à UF do Pará em alguns anos.\n\n## Emendas de Saúde no Pará\n\n- Em 2022, Maria Souza (PT) destinou R$ 1.800.000,00 para Saúde, subfunção Atenção Básica.\n- Em 2023, Maria Souza (PT) destinou R$ 2.500.000,00 para Saúde, subfunção Atenção Básica.\n- Em 2023, Carlos Andrade (PSDB) destinou R$ 4.100.000,00 para Saúde, subfunção Assistência Hospitalar.",
+      "referencia": "Quais emendas de saúde foram destinadas ao Pará? Foram encontrados 8 registros no total. 1. Beatriz Rocha (PP/MG), ano 2023, área Transporte, empenhado R$ 7,900,000.00, pago R$ 6,320,000.00. 2. Carlos Andrade (PSDB/PA), ano 2023, área Saúde, empenhado R$ 4,100,000.00, pago R$ 3,280,000.00. 3. Ana Lima (MDB/BA), ano 2023, área Educação, empenhado R$ 5,600,000.00, pago R$ 4,480,000.00. 4. Beatriz Rocha (PP/MG), ano 2024, área Saúde, empenhado R$ 3,400,000.00, pago R$ 2,720,000.00. 5. João Pereira (PL/SP), ano 2023, área Educação, empenhado R$ 3,200,000.00, pago R$ 2,560,000.00. 6. Maria Souza (PT/PA), ano 2022, área Saúde, empenhado R$ 1,800,000.00, pago R$ 1,440,000.00. 7. Maria Souza (PT/PA), ano 2023, área Saúde, empenhado R$ 2,500,000.00, pago R$ 2,000,000.00. 8. João Pereira (PL/SP), ano 2024, área Educação, empenhado R$ 2,750,000.00, pago R$ 2,200,000.00.",
+      "metricas": {
+        "entity_accuracy": 0.0,
+        "entity_details": {
+          "area": {
+            "esperado": "saude",
+            "extraido": "saýe",
+            "ok": false
+          },
+          "uf": {
+            "esperado": "PA",
+            "extraido": null,
+            "ok": false
+          }
+        },
+        "precision_at_5": 0.2,
+        "recall_at_5": 0.125,
+        "f1_score": 0.15384615384615385,
+        "ndcg_at_5": 0.27658698609568744,
+        "mrr": 0.5,
+        "bertscore_precision": 0.18177257478237152,
+        "bertscore_recall": 0.2346612513065338,
+        "bertscore_f1": 0.2088795006275177
+      },
+      "sucesso": true
+    }
+  ]
+}

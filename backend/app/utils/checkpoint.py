@@ -13,6 +13,23 @@ logger = structlog.get_logger()
 DEFAULT_PATH = Path(__file__).parent.parent.parent / "data" / "ingestion_checkpoint.json"
 
 
+def substituir_atomico(origem: Path, destino: Path, tentativas: int = 10) -> None:
+    """os.replace com novas tentativas curtas.
+
+    No Windows, o antivírus ou o indexador às vezes seguram o arquivo recém-gravado
+    por alguns milissegundos, e o os.replace falha com PermissionError (WinError 5).
+    Numa coleta de dias isso derrubava a fase inteira por causa de um checkpoint.
+    """
+    for tentativa in range(1, tentativas + 1):
+        try:
+            os.replace(str(origem), str(destino))
+            return
+        except PermissionError:
+            if tentativa == tentativas:
+                raise
+            time.sleep(0.05 * tentativa)  # até ~2 s no total
+
+
 class CheckpointManager:
     """Rastreia progresso de ingestão via arquivo JSON com escrita atômica."""
 
@@ -37,7 +54,7 @@ class CheckpointManager:
             json.dumps(self.data, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
-        os.replace(str(tmp), str(self.path))
+        substituir_atomico(tmp, self.path)
 
     def reset(self):
         """Limpa checkpoint para nova execução."""

@@ -56,9 +56,12 @@ backend/data/checkpoint_*.json
 backend/data/dead_letter_*.json
 backend/data/ingestion_checkpoint.json
 backend/data/*.txt
+backend/data/logs/
 
 # Bancos de dados locais
 *.db
+*.db-wal
+*.db-shm
 
 # Backups intermediários de testes
 backend/tests/test_queries/backup_*/

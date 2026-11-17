@@ -1,7 +1,7 @@
 import re
-from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from app.config import settings
+from app.services.rag.llm_factory import build_chat_llm
 from app.utils.source_urls import enrich_record_with_sources
 import structlog
 
@@ -79,9 +79,7 @@ class ResponseSynthesizer:
     """Sintetiza resposta em linguagem natural a partir dos dados recuperados."""
 
     def __init__(self):
-        self.llm = ChatAnthropic(
-            model=settings.ANTHROPIC_MODEL,
-            api_key=settings.ANTHROPIC_API_KEY,
+        self.llm = build_chat_llm(
             max_tokens=settings.ANTHROPIC_MAX_TOKENS,
             temperature=0.1,
         )

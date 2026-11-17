@@ -1,0 +1,13 @@
+{
+  "modelo": "gemini-2.5-flash",
+  "provedor": "litellm",
+  "inicio": "2026-10-16 13:02:59.250",
+  "base_de_dados": {
+    "emendas": 34126,
+    "parlamentares": 929,
+    "documentos_emenda": 544839,
+    "beneficiarios": 434,
+    "favorecidos": 36387
+  },
+  "fim": "2026-10-16 16:10:56.300"
+}

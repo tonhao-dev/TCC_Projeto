@@ -126,7 +126,7 @@ class HybridDecomposer:
             busca_beneficiario = True
 
         # Operação (busca, soma, ranking, contagem, media)
-        operacao = entidades.get("operacao", "busca")
+        operacao = entidades.get("operacao") or "busca"
         operacao_map = {
             "total": "soma", "quanto": "soma", "valor total": "soma",
             "quantas": "contagem", "quantos": "contagem", "número": "contagem",

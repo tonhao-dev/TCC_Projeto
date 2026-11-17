@@ -69,8 +69,8 @@ class DeadLetterQueue:
             json.dumps(self.items, indent=2, ensure_ascii=False, default=str),
             encoding="utf-8",
         )
-        import os
-        os.replace(str(tmp), str(self.path))
+        from app.utils.checkpoint import substituir_atomico
+        substituir_atomico(tmp, self.path)
 
     def add(self, fase: str, identificador: str, erro: str):
         # Verificar se já existe
