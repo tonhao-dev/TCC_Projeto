@@ -559,24 +559,49 @@ class CGUCollector:
     async def coletar_sancoes_cepim(self, start_page: int = 1) -> AsyncGenerator[dict, None]:
         """Coleta cadastro CEPIM (entidades impedidas)."""
         async for item in self._coletar_paginado("cepim", "cepim", start_page):
+            pj = self._obj(item, "pessoaJuridica")
             yield {
-                "cnpj": (item.get("cnpjSancionado") or item.get("cnpj", "")).strip(),
-                "nome": (item.get("nomeSancionado") or item.get("razaoSocial", "")).strip(),
-                "motivo": self._flatten_field(item.get("motivoImpedimento", "")),
-                "orgao_maximo": self._flatten_field(item.get("orgaoEntidade", "")),
+                "cnpj": self._primeiro(pj.get("cnpjFormatado"), item.get("cnpjSancionado"),
+                                       item.get("cnpj")),
+                "nome": self._primeiro(pj.get("nome"), pj.get("razaoSocialReceita"),
+                                       item.get("nomeSancionado"), item.get("razaoSocial")),
+                "motivo": self._flatten_field(item.get("motivo") or item.get("motivoImpedimento", "")),
+                "orgao_maximo": self._primeiro(self._obj(item, "orgaoSuperior").get("nome"),
+                                               self._flatten_field(item.get("orgaoEntidade", ""))),
             }
 
     async def coletar_sancoes_ceaf(self, start_page: int = 1) -> AsyncGenerator[dict, None]:
         """Coleta cadastro CEAF (servidores punidos)."""
         async for item in self._coletar_paginado("ceaf", "ceaf", start_page):
+            punicao = self._obj(item, "punicao")
+            pessoa = self._obj(item, "pessoa")
             yield {
-                "cpf": (item.get("cpfSancionado") or "").strip(),
-                "nome": (item.get("nomeSancionado") or "").strip(),
-                "tipo_punicao": self._flatten_field(item.get("descricaoPunicao", "")),
-                "orgao_lotacao": self._flatten_field(item.get("orgaoLotacao", "")),
+                "cpf": self._primeiro(punicao.get("cpfPunidoFormatado"), pessoa.get("cpfFormatado"),
+                                      item.get("cpfSancionado")),
+                "nome": self._primeiro(punicao.get("nomePunido"), pessoa.get("nome"),
+                                       item.get("nomeSancionado")),
+                "tipo_punicao": self._primeiro(self._obj(item, "tipoPunicao").get("descricao"),
+                                               self._flatten_field(item.get("descricaoPunicao", ""))),
+                "orgao_lotacao": self._primeiro(self._obj(item, "orgaoLotacao").get("nome"),
+                                                self._flatten_field(item.get("orgaoLotacao", ""))),
                 "data_inicio": item.get("dataPublicacao"),
+                # A API do CEAF não traz data de fim da punição.
                 "data_fim": item.get("dataFimPunicao"),
             }
+
+    @staticmethod
+    def _obj(item: dict, chave: str) -> dict:
+        """Devolve o objeto aninhado `item[chave]`, ou {} se faltar ou não for objeto."""
+        val = item.get(chave)
+        return val if isinstance(val, dict) else {}
+
+    @staticmethod
+    def _primeiro(*valores) -> str:
+        """Primeiro valor de texto não vazio, já sem espaços nas pontas."""
+        for v in valores:
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return ""
 
     @staticmethod
     def _flatten_field(val, preferred_keys=("descricao", "nome", "razaoSocial")) -> str:
@@ -596,17 +621,26 @@ class CGUCollector:
                     return v.strip()
             return str(val)
         if isinstance(val, list):
-            return "; ".join(str(v) for v in val)
+            partes = (CGUCollector._flatten_field(v, preferred_keys) for v in val)
+            return "; ".join(p for p in partes if p)
         return str(val)
 
     def _normalizar_sancao(self, raw: dict, tipo: str) -> dict:
-        """Normaliza dados de sanção CEIS/CNEP."""
-        cpf_cnpj = (raw.get("cpfCnpjSancionado")
-                     or raw.get("codigoSancionado")
-                     or raw.get("cnpjCpf", "")).strip()
+        """Normaliza dados de sanção CEIS/CNEP.
+
+        A API manda quem foi punido nos objetos `sancionado` e `pessoa`
+        (CeisDTO/CnepDTO). Os campos soltos antigos ficam como reserva.
+        """
+        sancionado = self._obj(raw, "sancionado")
+        pessoa = self._obj(raw, "pessoa")
+        cpf_cnpj = self._primeiro(sancionado.get("codigoFormatado"),
+                                  pessoa.get("cnpjFormatado"), pessoa.get("cpfFormatado"),
+                                  raw.get("cpfCnpjSancionado"), raw.get("codigoSancionado"),
+                                  raw.get("cnpjCpf"))
         result = {
             "cpf_cnpj": cpf_cnpj,
-            "nome": (raw.get("nomeSancionado") or "").strip(),
+            "nome": self._primeiro(sancionado.get("nome"), pessoa.get("nome"),
+                                   raw.get("nomeSancionado")),
             "tipo_sancao": self._flatten_field(raw.get("tipoSancao", "")),
             "orgao_sancionador": self._flatten_field(raw.get("orgaoSancionador", "")),
             "data_inicio": raw.get("dataInicioSancao"),
@@ -615,7 +649,8 @@ class CGUCollector:
         if tipo == "CNEP":
             result["valor_multa"] = self._parse_valor(raw.get("valorMulta", "0"))
         else:
-            result["fundamentacao"] = raw.get("fundamentacaoLegal", "")
+            result["fundamentacao"] = self._flatten_field(
+                raw.get("fundamentacao") or raw.get("fundamentacaoLegal", ""))
         return result
 
     # -----------------------------------------------------------------------
